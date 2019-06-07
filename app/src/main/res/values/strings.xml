@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Task</string>
+    <string name="loding">Loading...</string>
+    <string name="downloading">Downloading...</string>
+    <string name="network_not_connected_msg">Please connect to network to download the data.</string>
+
+</resources>
