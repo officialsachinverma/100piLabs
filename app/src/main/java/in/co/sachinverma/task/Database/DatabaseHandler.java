@@ -17,6 +17,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String DB_NAME = "Database.db";
     private SQLiteDatabase _database;
 
+    SQLiteDatabase initDB(){
+        if (_database != null)
+            _database = getWritableDatabase();
+        return _database;
+    }
+
     //Tables
     public static final String TBL_CURRENCY = "Currency";
 

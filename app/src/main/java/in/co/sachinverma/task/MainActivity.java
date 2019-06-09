@@ -1,10 +1,16 @@
 package in.co.sachinverma.task;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -24,6 +30,7 @@ import in.co.sachinverma.task.Network.NetworkManager;
 import in.co.sachinverma.task.Network.OnNetworkTask;
 import in.co.sachinverma.task.Utils.CustomProgressDialog;
 import in.co.sachinverma.task.Utils.Logger;
+import in.co.sachinverma.task.Utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements OnNetworkTask {
 
@@ -51,21 +58,25 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        init();
+        if (requestAppPermissions()){
+            init();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Cursor _cursor = _database.getCurrencyData();
-        if (_cursor != null && _cursor.moveToFirst()){
-            displayCurrencyList();
-        } else {
-            if (isWifiConnected()) {
-                NetworkManager networkManager = new NetworkManager(_context, MainActivity.this);
-                networkManager.init();
+        if (_database != null) {
+            Cursor _cursor = _database.getCurrencyData();
+            if (_cursor != null && _cursor.moveToFirst()){
+                displayCurrencyList();
             } else {
-                Toast.makeText(_context, getResources().getString(R.string.network_not_connected_msg), Toast.LENGTH_SHORT).show();
+                if (isWifiConnected()) {
+                    NetworkManager networkManager = new NetworkManager(_context, MainActivity.this);
+                    networkManager.init();
+                } else {
+                    Toast.makeText(_context, getResources().getString(R.string.network_not_connected_msg), Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -75,6 +86,19 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
         super.onDestroy();
         if(_database != null) {
             _database.close();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 100){
+            if (hasWritePermissions() && hasReadPermissions()){
+                init();
+                onResume();
+            } else {
+                requestAppPermissions();
+            }
         }
     }
 
@@ -158,6 +182,32 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
                 _rvCurrency.setVisibility(View.GONE);
             }
         }
+    }
+
+    private boolean requestAppPermissions() {
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return true;
+        }
+
+        if (hasReadPermissions() && hasWritePermissions()) {
+            return true;
+        }
+
+        ActivityCompat.requestPermissions(this,
+                new String[] {
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                }, Utils.REQUEST_WRITE_STORAGE_REQUEST_CODE);
+
+        return false;
+    }
+
+    private boolean hasReadPermissions() {
+        return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private boolean hasWritePermissions() {
+        return (ContextCompat.checkSelfPermission(getBaseContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
     }
 
 }

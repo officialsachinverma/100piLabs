@@ -147,4 +147,18 @@ public class Result {
         this.notice = notice;
     }
 
+    @Override
+    public String toString() {
+        return "Result{" +
+                "currency='" + currency + '\'' +
+                ", currencyLong='" + currencyLong + '\'' +
+                ", minConfirmation=" + minConfirmation +
+                ", txFee=" + txFee +
+                ", isActive=" + isActive +
+                ", isRestricted=" + isRestricted +
+                ", coinType='" + coinType + '\'' +
+                ", baseAddress='" + baseAddress + '\'' +
+                ", notice=" + notice +
+                '}';
+    }
 }
