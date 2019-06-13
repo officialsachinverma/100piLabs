@@ -2,6 +2,7 @@ package in.co.sachinverma.task;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import in.co.sachinverma.task.AdapterAndListeners.CurrencyAdapter;
+import in.co.sachinverma.task.DataRefreshService.DataRefresh;
 import in.co.sachinverma.task.Database.DatabaseHandler;
 import in.co.sachinverma.task.Model.Result;
 import in.co.sachinverma.task.Network.NetworkManager;
@@ -34,7 +36,7 @@ import in.co.sachinverma.task.Utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements OnNetworkTask {
 
-    public static DatabaseHandler _database;
+    public DatabaseHandler _database;
     private Context _context;
     private ArrayList<Result> _resultArrayList;
     private CurrencyAdapter _adapter;
@@ -51,6 +53,9 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
         _database.CreateDatabase();
         _database.OpenDatabase();
         _resultArrayList = new ArrayList<>();
+
+        Intent serviceIntent = new Intent(this, DataRefresh.class);
+        startService(serviceIntent);
     }
 
     @Override
@@ -58,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        if (requestAppPermissions()){
+        if (requestAppPermissions()) {
             init();
         }
     }
@@ -72,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
                 displayCurrencyList();
             } else {
                 if (isWifiConnected()) {
-                    NetworkManager networkManager = new NetworkManager(_context, MainActivity.this);
+                    NetworkManager networkManager = new NetworkManager(_context, MainActivity.this, true);
                     networkManager.init();
                 } else {
                     Toast.makeText(_context, getResources().getString(R.string.network_not_connected_msg), Toast.LENGTH_SHORT).show();
@@ -107,7 +112,9 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
         try {
             ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-            if (mWifi.isConnected()) {
+            NetworkInfo mMobile = connManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+
+            if (mWifi.isConnected() || mMobile.isConnected()) {
                 isWifiConnected = true;
             }
 
@@ -116,6 +123,12 @@ public class MainActivity extends AppCompatActivity implements OnNetworkTask {
         } finally {
             return isWifiConnected;
         }
+    }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        return cm.getActiveNetworkInfo() != null;
     }
 
     @Override

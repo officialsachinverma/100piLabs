@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 
+import in.co.sachinverma.task.Database.DatabaseHandler;
 import in.co.sachinverma.task.MainActivity;
 import in.co.sachinverma.task.Model.ResPojo;
 import in.co.sachinverma.task.Model.Result;
@@ -25,10 +26,16 @@ public class NetworkManager {
     private CustomProgressDialog customProgressDialog = null;
     private Context _context;
     private OnNetworkTask _onNetworkTask;
+    private boolean _showDialog;
+    private DatabaseHandler _database;
 
-    public NetworkManager(Context _context, OnNetworkTask _onNetworkTask){
+    public NetworkManager(Context _context, OnNetworkTask _onNetworkTask, boolean _showDialog){
         this._context = _context;
         this._onNetworkTask = _onNetworkTask;
+        this._showDialog = _showDialog;
+        _database = new DatabaseHandler(_context, null, null, 1);
+        _database.CreateDatabase();
+        _database.OpenDatabase();
     }
 
     public void init(){
@@ -40,10 +47,12 @@ public class NetworkManager {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            customProgressDialog = CustomProgressDialog.getInstance(_context);
-            customProgressDialog.setMessage("Please wait...");
-            customProgressDialog.setTitle(_context.getResources().getString(R.string.downloading));
-            customProgressDialog.show();
+            if (_showDialog) {
+                customProgressDialog = CustomProgressDialog.getInstance(_context);
+                customProgressDialog.setMessage("Please wait...");
+                customProgressDialog.setTitle(_context.getResources().getString(R.string.downloading));
+                customProgressDialog.show();
+            }
         }
 
         @Override
@@ -66,7 +75,7 @@ public class NetworkManager {
                         _reponse = "" + _resPojo.getSuccess();
                         List<Result> _resultArrayList = _resPojo.getResult();
                         for(Result _result: _resultArrayList){
-                            MainActivity._database.saveCurrencyData(_result);
+                            _database.saveCurrencyData(_result);
                         }
                     } else {
                         _reponse = null;
@@ -87,12 +96,15 @@ public class NetworkManager {
             if (customProgressDialog != null) {
                 customProgressDialog.mProgessDismiss();
             }
+            if (_database!=null){
+                _database.close();
+            }
             if(response != null) {
-                Toast.makeText(_context, "Download success.", Toast.LENGTH_LONG).show();
+                //Toast.makeText(_context, "Download success.", Toast.LENGTH_LONG).show();
                 if (_onNetworkTask != null)
                     _onNetworkTask.onNetworkTaskFinished();
             } else {
-                Toast.makeText(_context, "Download failed.", Toast.LENGTH_LONG).show();
+                //Toast.makeText(_context, "Download failed.", Toast.LENGTH_LONG).show();
             }
         }
     }
